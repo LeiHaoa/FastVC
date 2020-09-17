@@ -1,22 +1,57 @@
 import torch 
 from torch.autograd import Variable 
+import torch.nn as nn
 import torch.nn.functional as F 
 import matplotlib.pyplot as plt 
   
   
 class Net(torch.nn.Module): 
-  def __init__(self, n_feature, n_hidden, n_output): 
+  def __init__(self, n_features, hidden_sizes, n_output): 
     super(Net, self).__init__()  
-    self.hidden1 = torch.nn.Linear(n_feature, n_hidden) # hidden layer 
-    #self.hidden2 = torch.nn.Linear(n_hidden, n_hidden) # hidden layer 
-    #dropout???
-    self.predict = torch.nn.Linear(n_hidden, n_output) # output layer
+    '''
+    self.layers = []
+    self.layers.append(nn.Linear(n_features, hidden_sizes[0]))
+    for i in range(len(hidden_sizes) - 1):
+      print("add hidden layer:({} x {})".format(hidden_sizes[i], hidden_sizes[i+1]))
+      self.layers.append(nn.Linear(hidden_sizes[i], hidden_sizes[i + 1]))
+    '''
+    self.hidden0 = nn.Linear(n_features, hidden_sizes[0])
+    assert(len(hidden_sizes) == 4)
+    self.hidden1 = nn.Linear(hidden_sizes[0], hidden_sizes[1])
+    self.hidden2 = nn.Linear(hidden_sizes[1], hidden_sizes[2])
+    self.hidden3 = nn.Linear(hidden_sizes[2], hidden_sizes[3])
+    self.predict = nn.Linear(hidden_sizes[-1], n_output) # output layer
   
   def forward(self, x): 
-    x = F.relu(self.hidden1(x)) 
-    #x = F.relu(self.hidden2(x))
+    '''
+    for i in range(len(self.layers)):
+      x = F.relu(self.layers[i](x))
+    '''
+    #print("----------------print out input--------------")
+    #print("1\n", x)
+    x = torch.relu(self.hidden0(x)) 
+    #print("2\n",x)
+    x = torch.relu(self.hidden1(x)) 
+    #print("3\n",x)
+    x = torch.relu(self.hidden2(x))
+    #print("4\n",x)
+    x = torch.relu(self.hidden3(x))
+    #print("5\n",x)
     x = self.predict(x) 
-    return F.softmax(x, dim = 1)
+    #print("6\n", x)
+    return x
+    #return F.softmax(x, dim = 1)
+
+  def initialize_weights(self):
+    print("initializeing net work")
+    for m in self.modules():
+      print(m)
+      if isinstance(m, nn.Linear):
+        # print(m.weight.data.type())
+        # input()
+        # m.weight.data.fill_(1.0)
+        nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
+        #nn.init.xavier_uniform_(m.weight)
 
 '''  
 opitmizer = torch.optim.SGD(net.parameters(),lr=0.03)
